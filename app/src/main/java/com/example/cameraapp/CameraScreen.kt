@@ -831,23 +831,30 @@ fun CameraScreen(
                                 .clickable {
                                     if (enableBackgroundRecordingMode) {
                                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        // Unbind UI camera to free hardware encoder for background service
-                                        try {
+
+                                        if (isBgRecordingActive) {
+                                            // Stop Background Recording
+                                            val stopIntent = Intent(context, BackgroundVideoService::class.java).apply {
+                                                action = BackgroundVideoService.ACTION_STOP_RECORDING
+                                            }
+                                            ContextCompat.startForegroundService(context, stopIntent)
+                                            isBgRecordingActive = false
+                                        } else {
+                                            // Start Background Recording – আগে unbind করে তারপর service চালু (Race Condition Fix)
                                             val providerFuture = ProcessCameraProvider.getInstance(context)
                                             providerFuture.addListener({
-                                                providerFuture.get().unbindAll()
-                                            }, ContextCompat.getMainExecutor(context))
-                                        } catch (e: Exception) {}
+                                                try {
+                                                    providerFuture.get().unbindAll()
+                                                } catch (_: Exception) {}
 
-                                        val intent = Intent(context, BackgroundVideoService::class.java).apply {
-                                            action = if (isBgRecordingActive)
-                                                BackgroundVideoService.ACTION_STOP_RECORDING
-                                            else
-                                                BackgroundVideoService.ACTION_START_RECORDING
-                                            putExtra("hasAudio", hasAudioPermission)
+                                                val startIntent = Intent(context, BackgroundVideoService::class.java).apply {
+                                                    action = BackgroundVideoService.ACTION_START_RECORDING
+                                                    putExtra("hasAudio", hasAudioPermission)
+                                                }
+                                                ContextCompat.startForegroundService(context, startIntent)
+                                                isBgRecordingActive = true
+                                            }, ContextCompat.getMainExecutor(context))
                                         }
-                                        ContextCompat.startForegroundService(context, intent)
-                                        isBgRecordingActive = !isBgRecordingActive
                                     } else {
                                         if (isRecording) {
                                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
