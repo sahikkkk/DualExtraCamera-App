@@ -48,27 +48,22 @@ object CameraHelper {
 
     fun getLatestMediaUri(context: Context): Uri? {
         return try {
-            val projection = arrayOf(
-                MediaStore.MediaColumns._ID,
-                MediaStore.MediaColumns.DATE_ADDED
-            )
-            val sortOrder = "${MediaStore.MediaColumns.DATE_ADDED} DESC"
-
-            context.contentResolver.query(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                projection,
-                null,
-                null,
-                sortOrder
-            )?.use { cursor ->
-                if (cursor.moveToFirst()) {
-                    val idColumn = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
-                    val id = cursor.getLong(idColumn)
-                    ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
-                } else null
-            }
-        } catch (ignored: Exception) {
+            val imageUri = queryLatest(context, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+            val videoUri = queryLatest(context, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
+            videoUri ?: imageUri
+        } catch (_: Exception) {
             null
+        }
+    }
+
+    private fun queryLatest(context: Context, collection: Uri): Uri? {
+        val projection = arrayOf(MediaStore.MediaColumns._ID, MediaStore.MediaColumns.DATE_ADDED)
+        val sortOrder = "${MediaStore.MediaColumns.DATE_ADDED} DESC"
+        return context.contentResolver.query(collection, projection, null, null, sortOrder)?.use { c ->
+            if (c.moveToFirst()) {
+                val id = c.getLong(c.getColumnIndexOrThrow(MediaStore.MediaColumns._ID))
+                ContentUris.withAppendedId(collection, id)
+            } else null
         }
     }
 
@@ -92,7 +87,7 @@ object CameraHelper {
             put(MediaStore.MediaColumns.DISPLAY_NAME, name)
             put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/ExtraCameraApp")
+                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/DualExtraCamera")
             }
         }
 
@@ -140,7 +135,7 @@ object CameraHelper {
             put(MediaStore.MediaColumns.DISPLAY_NAME, name)
             put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/ExtraCameraApp")
+                put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/DualExtraCamera")
             }
         }
 
@@ -159,7 +154,7 @@ object CameraHelper {
         if (hasAudioPermission && audioGranted) {
             try {
                 pendingRecording = pendingRecording.withAudioEnabled()
-            } catch (ignored: SecurityException) {
+            } catch (_: SecurityException) {
                 // Fallback to silent video if permission is restricted
             }
         }
@@ -190,7 +185,7 @@ object CameraHelper {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             context.startActivity(intent)
-        } catch (ignored: Exception) {
+        } catch (_: Exception) {
             Toast.makeText(context, "Cannot open gallery app", Toast.LENGTH_SHORT).show()
         }
     }
@@ -204,7 +199,7 @@ object CameraHelper {
                 CameraSelector.LENS_FACING_EXTERNAL -> "External Camera"
                 else -> "Extra Camera"
             }
-        } catch (ignored: Exception) {
+        } catch (_: Exception) {
             "Extra Camera"
         }
     }
