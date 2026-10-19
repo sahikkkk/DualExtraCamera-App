@@ -60,6 +60,9 @@ Alternatively, build via command line:
 
 ---
 
-## 📄 License
+## 📄 License & Attribution
 
-Distributed under the **MIT License**. See [LICENSE](LICENSE) for more information.
+This project is **open source and free to edit, fork, and use**. 
+However, **attribution is required**: any derivative works, modifications, or redistribution must prominently display credit to the original author (**sahikkkk** / **DualExtraCamera**). 
+
+See the [LICENSE](LICENSE) file for full details.
